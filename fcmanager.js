@@ -1,6 +1,6 @@
 /**
  * Manager for FullCalendar  v0.1
- * http://github.com/fullcalendar/
+ * http://github.com/mkuklis/fcmanager
  *
  * Use fcmanager.css for basic styling.
  *
