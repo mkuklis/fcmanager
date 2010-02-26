@@ -16,11 +16,11 @@
 (function($) {
 			
   $.fn.fcManager = function(options) {
-		o = $.extend({}, o, options);
+    o = $.extend({}, o, options);
 		
-		return this.each(function() {
-			if (o.calendar == undefined) {
-				throw("instance of fullCalendar not found.");
+    return this.each(function() {
+      if (o.calendar == undefined) {
+        throw("instance of fullCalendar not found.");
 			}
 			
 			if (o.currentDate == undefined) {
@@ -36,7 +36,7 @@
 	
 	// private
 	
-	var registerEvents = function() {
+  var registerEvents = function() {
 		
 		// add
 		$("#" + o.eventFormId + " input[name='add']").live('click', function(e) {
