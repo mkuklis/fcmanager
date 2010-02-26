@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN""http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+
+<link rel='stylesheet' type='text/css' href='fullcalendar/redmond/theme.css' />
+<link rel='stylesheet' type='text/css' href='fullcalendar/fullcalendar.css' />
+<link rel='stylesheet' type='text/css' href='../fcmanager.css' />
+<style type='text/css'>
+	#container {
+		margin: 0 auto;
+		width: 900px;
+	}
+</style>
+<script type='text/javascript' src='jquery/jquery.js'></script>
+<script type='text/javascript' src='jquery/ui.core.js'></script>
+<script type='text/javascript' src='jquery/ui.draggable.js'></script>
+<script type='text/javascript' src='jquery/ui.resizable.js'></script>
+<script type='text/javascript' src='fullcalendar/fullcalendar.js'></script>
+<script type='text/javascript' src='../fcmanager.js'></script>
+
+<script type='text/javascript'>
+	$(document).ready(function() {
+		
+		var date = new Date();
+		var d = date.getDate();
+		var m = date.getMonth();
+		var y = date.getFullYear();
+		$('.current-date').html(m + 1 + "/" + d +  "/" + y);
+		
+		var fullCalendar = $('#calendar').fullCalendar({
+			theme: true,
+			editable: true,
+			
+			header: {
+				left: 'prev,next today',
+				center: 'title',
+				right: 'month,agendaWeek,agendaDay'
+			},
+			
+			eventRender: function(event, element, view) {
+    		$.fn.fcManager.eventRenderCallback(event);
+    	},
+    	
+    	eventClick: function(calEvent, jsEvent, view) {
+    		$.fn.fcManager.eventClickCallback(calEvent);
+    	},
+    	
+    	dayClick: function(date, allDay, jsEvent, view) {
+      	$.fn.fcManager.dayClickCallback(date, $(this));
+    	},
+
+			events: [
+				{
+					title: 'Meeting',
+					start: new Date(y, m, d, 10, 30),
+					allDay: false
+				},
+				{
+					title: 'Lunch',
+					start: new Date(y, m, d, 12, 0),
+					end: new Date(y, m, d, 14, 0),
+					allDay: false
+				},
+				{
+					title: 'Birthday Party',
+					start: new Date(y, m, d+1, 19, 0),
+					end: new Date(y, m, d+1, 22, 30),
+					allDay: false
+				}
+			]
+		});
+		
+		$('#manager').fcManager();
+
+	});
+</script>
+</head>
+	<div id="container">
+		<div id="calendar"></div>
+		<div id="manager"></div>
+	</div>
+<body>
+</body>
+</html>

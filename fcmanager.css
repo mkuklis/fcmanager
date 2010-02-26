@@ -1,0 +1,38 @@
+.fcm {
+	font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
+	padding: 5px 0px 5px 0px;
+	border: 1px solid #A6C9E2;
+	background: #F5F8F9;
+	width: 200px;
+	margin: 40px 0px 0px 10px;
+	float: left;
+}
+		
+.fcm-current-day {
+	font-size: 20px;
+	padding: 0px;
+	margin: 0px;
+}
+		
+.fcm-title {
+	font-size:10px;
+}
+		
+.fcm-hrcolor {
+	background-color: #A6C9E2;
+	color: #A6C9E2;
+}
+		
+.fcm-form {
+	padding: 5px;
+}
+		
+input.fcm-action {
+	float: left;
+}
+		
+#calendar {
+	width: 600px;
+	float: left;
+	font-size:12px;
+}
