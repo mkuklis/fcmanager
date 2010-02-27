@@ -20,7 +20,7 @@
 
     return this.each(function() {
       if (o.calendar == undefined) {
-        throw("instance of fullCalendar not found.");
+        throw("calendar id not found.");
       }
 
       if (o.currentDate == undefined) {
@@ -35,16 +35,25 @@
   };
 
   // private
-
+  
+  // ids
+  var 
+    eventFormId = '#fcm-add-event-form',
+    addActionId = '#fcm-add-action',
+    updateActionId = '#fcm-update-action',
+    currentDayId = '#fcm-current-date',
+    titleLabelId = '#fcm-labelId',
+    cancelActionId = '#fcm-cancel-action';
+    
   var registerEvents = function() {
 
     // add
-    $("#" + o.eventFormId + " input[name='add']").live('click', function(e) {
-      var event = $("#" + o.eventFormId).serializeObject();
+    $(eventFormId + " input[name='add']").live('click', function(e) {
+      var event = $(eventFormId).serializeObject();
       if (event.title != "") {
         // todo process date
         if (o.currentDate == null) {
-          o.currentDate = $.fullCalendar.parseDate($('#' + o.currentDayId).html());
+          o.currentDate = $.fullCalendar.parseDate($(currentDayId).html());
         }
 
         event.start = o.currentDate;
@@ -53,15 +62,15 @@
     });
 
     // update
-    $("#" + o.eventFormId + " input[name='update']").live('click', function(e) {
-      var event = $("#" + o.eventFormId).serializeObject();
+    $(eventFormId + " input[name='update']").live('click', function(e) {
+      var event = $(eventFormId).serializeObject();
       updateEvent(event);
     });
     
     // cancel
-    $("#" + o.cancelActionId).live('click', function(e) {
-      $("#" + o.addActionId).show();
-      $("#" + o.updateActionId).hide();
+    $(cancelActionId).live('click', function(e) {
+      $(addActionId).show();
+      $(updateActionId).hide();
       clearForm();
       e.preventDefault();
     });
@@ -76,19 +85,19 @@
   var updateEvent = function(event) {
     // remove chosen event
     o.currentEvent.title = event.title;
-    $('#' + o.calendar).fullCalendar('updateEvent', o.currentEvent);
+    $("#" + o.calendar).fullCalendar('updateEvent', o.currentEvent);
     $day = eventToDay(o.currentEvent);
     highlightDay($day);
     clearForm();
-    $("#" + o.addActionId).show();
-    $("#" + o.updateActionId).hide();
+    $(addActionId).show();
+    $(updateActionId).hide();
   };
 
   var buildContent = function() {
     var content =
-      '<div class="fcm-current-day-wrapper"><p class="fcm-current-day" id="' + o.currentDayId + '">' + o.currentDate + '</p></div>' +
-      '<form class="fcm-form" id="' + o.eventFormId + '">' +
-      '<label><strong class="fcm-title" id="' + o.titleLabelId + '">' + o.newEventLabel + '</strong></label><br />' +
+      '<div class="fcm-current-day-wrapper"><p class="fcm-current-day" id="fcm-current-date">' + o.currentDate + '</p></div>' +
+      '<form class="fcm-form" id="fcm-add-event-form">' +
+      '<label><strong class="fcm-title" id="fcm-labelId">' + o.newEventLabel + '</strong></label><br />' +
       '<input type="text" name="title" value="" /><br />' +
       '<label><strong class="fcm-title">' + o.typeLabel + '</strong></label><br />' +
       '<select name="type">';
@@ -99,18 +108,18 @@
 
       content += '</select>' +
         '<hr class="fcm-hrcolor" />' +
-        '<div class="fcm-action" id="' + o.addActionId + '">' +
+        '<div class="fcm-action" id="fcm-add-action">' +
         '<input type="button" name="add" value="add Event" /></div>' +
-        '<div class="fcm-action" id="' + o.updateActionId + '" style="display:none">' +
+        '<div class="fcm-action" id="fcm-update-action" style="display:none">' +
         '<input type="button" name="update" value="update Event" />' +
-        '<a class="fcm-cancel" id="' + o.cancelActionId + '" href="">cancel</a></div>' +
+        '<a class="fcm-cancel" id="fcm-cancel-action" href="">cancel</a></div>' +
         '</form>';
 
     return content;
   }
 
   var clearForm = function() {
-    $("#" + o.eventFormId + ' input[name="title"]').val("");
+    $(eventFormId + ' input[name="title"]').val("");
   };
 
   var highlightDay = function($day) {
@@ -157,17 +166,13 @@
 
   // public
 
-  $.fn.fcManager.eventRenderCallback = function(event) {
-
-  };
-
   $.fn.fcManager.dayClickCallback = function(date, $day) {
     clearForm();
-    $("#" + o.titleLabelId).html(o.newEventLabel);
-    $("#" + o.addActionId).show();
-    $("#" + o.updateActionId).hide();
-    $("#" + o.currentDayId).html($.fullCalendar.formatDate(date, "MM/dd/yyyy"));
-    $("#" + o.eventFormId + " input[name='title']").focus();
+    $(titleLabelId).html(o.newEventLabel);
+    $(addActionId).show();
+    $(updateActionId).hide();
+    $(currentDayId).html($.fullCalendar.formatDate(date, "MM/dd/yyyy"));
+    $(eventFormId + " input[name='title']").focus();
     $day.css('background-color', '#FFFF88');
     o.currentDate = date;
 
@@ -178,15 +183,15 @@
 
     o.currentEvent = event;
     o.currentDate = event.start;
-    $("#" + o.titleLabelId).html(o.updateEventLabel);
-    $("#" + o.currentDayId).html($.fullCalendar.formatDate(event.start, "MM/dd/yyyy"));
-    $("#" + o.eventFormId + ' input[name="title"]').val(event.title);
+    $(titleLabelId).html(o.updateEventLabel);
+    $(currentDayId).html($.fullCalendar.formatDate(event.start, "MM/dd/yyyy"));
+    $('#fcm-add-event-form input[name="title"]').val(event.title);
    
     $day = eventToDay(o.currentEvent);
     highlightDay($day);
   
-    $("#" + o.addActionId).hide();
-    $("#" + o.updateActionId).show();
+    $(addActionId).hide();
+    $(updateActionId).show();
   };
 
   // default options
@@ -197,14 +202,6 @@
     newEventLabel: 'Add New Event:',
     updateEventLabel: 'Update Event:',
     typeLabel: 'Event Type:',
-
-    // ids
-    eventFormId: 'fcm-add-event-form',
-    addActionId: 'fcm-add-action',
-    updateActionId: 'fcm-update-action',
-    currentDayId: 'fcm-current-date',
-    titleLabelId: 'fcm-labelId',
-    cancelActionId: 'fcm-cancel-action',
 
     calendar: 'calendar',
     

@@ -42,19 +42,9 @@
 				center: 'title',
 				right: 'month,agendaWeek,agendaDay'
 			},
-			
-			eventRender: function(event, element, view) {
-    		$.fn.fcManager.eventRenderCallback(event);
-    	},
     	
     	eventClick: function(calEvent, jsEvent, view) {
-    		$(view).css('background-color', '#ff0000');
-    		//console.log(view);
-    		//console.log(jsEvent);
-    		//console.log(calEvent);
-    		console.log(this);
     		$.fn.fcManager.eventClickCallback(calEvent);
-    		
     	},
     	
     	dayClick: function(date, allDay, jsEvent, view) {
