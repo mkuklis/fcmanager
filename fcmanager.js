@@ -38,7 +38,7 @@
 
   var registerEvents = function() {
 
-  // add
+    // add
     $("#" + o.eventFormId + " input[name='add']").live('click', function(e) {
       var event = $("#" + o.eventFormId).serializeObject();
       if (event.title != "") {
@@ -56,6 +56,14 @@
     $("#" + o.eventFormId + " input[name='update']").live('click', function(e) {
       var event = $("#" + o.eventFormId).serializeObject();
       updateEvent(event);
+    });
+    
+    // cancel
+    $("#" + o.cancelActionId).live('click', function(e) {
+      $("#" + o.addActionId).show();
+      $("#" + o.updateActionId).hide();
+      clearForm();
+      e.preventDefault();
     });
   }
 
@@ -78,9 +86,9 @@
 
   var buildContent = function() {
     var content =
+      '<div class="fcm-current-day-wrapper"><p class="fcm-current-day" id="' + o.currentDayId + '">' + o.currentDate + '</p></div>' +
       '<form class="fcm-form" id="' + o.eventFormId + '">' +
-      '<p class="fcm-current-day" id="' + o.currentDayId + '">' + o.currentDate + '</p>' +
-      '<label><strong class="fcm-title" id="' + o.titleLabelId + '">' + o.titleLabel + '</strong></label><br />' +
+      '<label><strong class="fcm-title" id="' + o.titleLabelId + '">' + o.newEventLabel + '</strong></label><br />' +
       '<input type="text" name="title" value="" /><br />' +
       '<label><strong class="fcm-title">' + o.typeLabel + '</strong></label><br />' +
       '<select name="type">';
@@ -94,7 +102,8 @@
         '<div class="fcm-action" id="' + o.addActionId + '">' +
         '<input type="button" name="add" value="add Event" /></div>' +
         '<div class="fcm-action" id="' + o.updateActionId + '" style="display:none">' +
-        '<input type="button" name="update" value="update Event" /><a href="">cancel</a></div>' +
+        '<input type="button" name="update" value="update Event" />' +
+        '<a class="fcm-cancel" id="' + o.cancelActionId + '" href="">cancel</a></div>' +
         '</form>';
 
     return content;
@@ -105,16 +114,45 @@
   };
 
   var highlightDay = function($day) {
+    unhighlightDay();
+    $day.css("background-color", o.activeDayBackgroundColor);
+    o.currentDay = $day;
+  };
+  
+  var unhighlightDay = function() {
     if (o.currentDay != null) {
       o.currentDay.css("background-color", "#ffffff");
     }
-    $day.css("background-color", "#FFFF88");
-    o.currentDay = $day;
-  };
+  }
 
+  // TODO fix it
   var eventToDay = function(event) {
-    var day = $.fullCalendar.formatDate(event.start, "d");
-    return $('.fc-day' + day);
+    
+    var eDay = $.fullCalendar.formatDate(event.start, "d");
+    var eMonth = $.fullCalendar.formatDate(event.start, "MM");
+    
+    var d = $("#" + o.calendar).fullCalendar('getDate');
+    var tMonth = $.fullCalendar.formatDate(d, "MM");
+    
+    var day = null;
+    
+    $('.fc-day-number').each(function(){
+      if (parseInt($(this).html()) == eDay) {
+        if (day == null) {
+          day = $(this).parent();
+        }
+        else {
+          if (tMonth < eMonth) {
+            day = $(this).parent();
+          }
+        }
+      }
+    })
+    return day;
+  };
+  
+  var daysInMonth = function(month, year) {
+	  return new Date(year, month, 0).getDate();
   };
 
   // public
@@ -125,10 +163,9 @@
 
   $.fn.fcManager.dayClickCallback = function(date, $day) {
     clearForm();
-    $("#" + o.titleLabelId).html("Add new Event");
+    $("#" + o.titleLabelId).html(o.newEventLabel);
     $("#" + o.addActionId).show();
     $("#" + o.updateActionId).hide();
-
     $("#" + o.currentDayId).html($.fullCalendar.formatDate(date, "MM/dd/yyyy"));
     $("#" + o.eventFormId + " input[name='title']").focus();
     $day.css('background-color', '#FFFF88');
@@ -141,37 +178,41 @@
 
     o.currentEvent = event;
     o.currentDate = event.start;
-    $("#" + o.titleLabelId).html("Update Event");
+    $("#" + o.titleLabelId).html(o.updateEventLabel);
     $("#" + o.currentDayId).html($.fullCalendar.formatDate(event.start, "MM/dd/yyyy"));
     $("#" + o.eventFormId + ' input[name="title"]').val(event.title);
-
-    $day = eventToDay(event);
+   
+    $day = eventToDay(o.currentEvent);
     highlightDay($day);
-
+  
     $("#" + o.addActionId).hide();
     $("#" + o.updateActionId).show();
   };
 
   // default options
   var o = $.fn.fcManager.options = {
-    eventTypes: {'appointment': 'Appointment', 'persion': 'Personal'},
+    eventTypes: {'appointment': 'Appointment', 'personal': 'Personal'},
 
     // labels
-    titleLabel: 'Add New Event:',
+    newEventLabel: 'Add New Event:',
+    updateEventLabel: 'Update Event:',
     typeLabel: 'Event Type:',
 
     // ids
-    eventFormId: 'add-event-form',
-    addActionId: 'add-action',
-    updateActionId: 'update-action',
-    currentDayId: 'current-date',
-    titleLabelId: 'labelId',
-    calendar: 'calendar',
+    eventFormId: 'fcm-add-event-form',
+    addActionId: 'fcm-add-action',
+    updateActionId: 'fcm-update-action',
+    currentDayId: 'fcm-current-date',
+    titleLabelId: 'fcm-labelId',
+    cancelActionId: 'fcm-cancel-action',
 
+    calendar: 'calendar',
+    
     // current
     currentDay: null,
     currentEvent: null,
-    currentDate: null
+    currentDate: null,
+    activeDayBackgroundColor: '#F5F8F9'
   };
   
   // utils

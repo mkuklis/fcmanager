@@ -10,6 +10,12 @@
 		margin: 0 auto;
 		width: 900px;
 	}
+	
+	#calendar {
+		width: 600px;
+		float: left;
+		font-size:12px;
+	}
 </style>
 <script type='text/javascript' src='jquery/jquery.js'></script>
 <script type='text/javascript' src='jquery/ui.core.js'></script>
@@ -42,7 +48,13 @@
     	},
     	
     	eventClick: function(calEvent, jsEvent, view) {
+    		$(view).css('background-color', '#ff0000');
+    		//console.log(view);
+    		//console.log(jsEvent);
+    		//console.log(calEvent);
+    		console.log(this);
     		$.fn.fcManager.eventClickCallback(calEvent);
+    		
     	},
     	
     	dayClick: function(date, allDay, jsEvent, view) {
@@ -52,7 +64,7 @@
 			events: [
 				{
 					title: 'Meeting',
-					start: new Date(y, m, d, 10, 30),
+					start: new Date(2010, 00, 31, 10, 30),
 					allDay: false
 				},
 				{

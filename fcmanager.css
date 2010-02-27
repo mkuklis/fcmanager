@@ -1,17 +1,24 @@
 .fcm {
 	font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
-	padding: 5px 0px 5px 0px;
+	padding: 0px 0px 5px 0px;
 	border: 1px solid #A6C9E2;
-	background: #F5F8F9;
+	/* background: #F5F8F9; */
 	width: 200px;
 	margin: 40px 0px 0px 10px;
 	float: left;
+}
+
+.fcm-current-day-wrapper {
+	background: #F5F8F9;
+	margin: 0px;
+	padding: 2px;
 }
 		
 .fcm-current-day {
 	font-size: 20px;
 	padding: 0px;
-	margin: 0px;
+	margin: 0px auto;
+	width: 100px;	
 }
 		
 .fcm-title {
@@ -19,20 +26,24 @@
 }
 		
 .fcm-hrcolor {
-	background-color: #A6C9E2;
-	color: #A6C9E2;
+	color: #F5F8F9;
 }
 		
 .fcm-form {
 	padding: 5px;
 }
-		
-input.fcm-action {
-	float: left;
+
+.fcm-form input {
+
 }
-		
-#calendar {
-	width: 600px;
-	float: left;
-	font-size:12px;
+
+.fcm-cancel {
+	font-size: 12px;
+	color: #3366CC;
 }
+
+.fcm-action input {
+	float: left;
+	margin-right: 10px;
+}
+	
