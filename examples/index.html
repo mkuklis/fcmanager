@@ -48,7 +48,8 @@
     	},
     	
     	dayClick: function(date, allDay, jsEvent, view) {
-      	$.fn.fcManager.dayClickCallback(date, $(this));
+    		console.log(view); 
+      	$.fn.fcManager.dayClickCallback(date, $(this), view);
     	},
 
 			events: [

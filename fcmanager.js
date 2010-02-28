@@ -7,11 +7,15 @@
  * Copyright (c) 2010 Michal Kuklis
  * Dual licensed under the MIT and GPL licenses:
  *   http://www.opensource.org/licenses/mit-license.php
- *   http://www.gnu.org/licenses/gpl.html
+ *   http://www.gnu.org/licenses/gpl.htmlc
  *
  * Date: Thu Feb 25 2010
  *
  */
+
+// TODO
+// * add simple pub/sub
+// * replace actions with events (bind/trigger or publish/subscribe)
 
 (function($) {
 
@@ -23,79 +27,143 @@
         throw("calendar id not found.");
       }
 
-      if (o.currentDate == undefined) {
-        var date = new Date();
-        o.currentDate = date.getMonth() + 1 + "/" + date.getDate() +  "/" + date.getFullYear();
-      }
-
       var element = $(this).addClass('fcm');
       element.html(buildContent());
-      registerEvents();
+      
+      if (o.currentDate == undefined) {
+        updateCurrentDate($("#" + o.calendar).fullCalendar('getDate'));         
+      }
+      bindEvents();
+      $.publish(PLUGIN_READY);
     });
+  };
+
+  // public
+  
+  $.fn.fcManager.dayClickCallback = function(date, $day) {
+    updateCurrentDate(date);
+    o.currentDay = $day;
+    highlightDay($day);
+    $.publish(DAY_CLICKED);
+  };
+
+  $.fn.fcManager.eventClickCallback = function(event) {
+    o.currentEvent = event;
+    updateCurrentDate(event.start);
+    o.currentDay = eventToDay(event);
+    highlightDay(o.currentDay);
+    $.publish(EVENT_CLICKED, [event]);
+  };
+  
+  // default options
+  var o = $.fn.fcManager.options = {
+    
+    // labels
+    eventTypes: {'appointment': 'Appointment', 'personal': 'Personal'},
+    newEventLabel: 'Add New Event:',
+    updateEventLabel: 'Update Event:',
+    typeLabel: 'Event Type:',
+    
+    // calendar id
+    calendar: 'calendar',
+    
+    // current
+    currentDay: null,
+    currentEvent: null,
+    
+    // date associated with the current day or event 
+    currentDate: null,
+    currentDateFormat: "MM/dd/yyyy",
+    activeDayBackgroundColor: '#F5F8F9'
+    
   };
 
   // private
   
-  // ids
   var 
+    // event constants
+    EVENT_CLICKED = "eventClicked",
+    CURRENT_EVENT_CLICKED = "currentEventClicked",
+    DAY_CLICKED = "dayClicked",
+    FORM_BUTTON_CLICKED = "formButtonClicked",
+    CANCEL_LINK_CLICKED = "cancelClicked",
+    PLUGIN_READY = "pluginReady",
+    
+    // ids
     eventFormId = '#fcm-add-event-form',
     addActionId = '#fcm-add-action',
     updateActionId = '#fcm-update-action',
     currentDayId = '#fcm-current-date',
     titleLabelId = '#fcm-labelId',
-    cancelActionId = '#fcm-cancel-action';
+    cancelActionId = '#fcm-cancel-action',
+    currentEventsId = '#fcm-events',
     
-  var registerEvents = function() {
+    // classes
+    fcmEvent = '.fcm-event';
+  
+  var bindEvents = function() {
 
+    $.subscribe($(currentEventsId), EVENT_CLICKED, loadCurrentDayEvents);
+    $.subscribe($(currentEventsId), PLUGIN_READY, loadCurrentDayEvents);
+    $.subscribe($(currentEventsId), DAY_CLICKED, loadCurrentDayEvents);
+    $.subscribe($(currentEventsId), FORM_BUTTON_CLICKED, loadCurrentDayEvents);
+    $.subscribe($(eventFormId), EVENT_CLICKED, showEditForm);
+    $.subscribe($(eventFormId), CURRENT_EVENT_CLICKED, showEditForm);
+    $.subscribe($(eventFormId), DAY_CLICKED, showNewForm);
+    $.subscribe($(eventFormId), FORM_BUTTON_CLICKED, showNewForm);
+    $.subscribe($(eventFormId), CANCEL_LINK_CLICKED, showNewForm);
+    
     // add
     $(eventFormId + " input[name='add']").live('click', function(e) {
       var event = $(eventFormId).serializeObject();
       if (event.title != "") {
         // todo process date
         if (o.currentDate == null) {
+          // FIX ME
           o.currentDate = $.fullCalendar.parseDate($(currentDayId).html());
         }
 
         event.start = o.currentDate;
-        addEvent(event);
+        $('#' + o.calendar).fullCalendar('renderEvent', event, true);
+        $.publish(FORM_BUTTON_CLICKED, [o.currentEvent]);
       }
     });
-
-    // update
+    
+    // edit
     $(eventFormId + " input[name='update']").live('click', function(e) {
       var event = $(eventFormId).serializeObject();
-      updateEvent(event);
+      o.currentEvent.title = event.title;
+      $("#" + o.calendar).fullCalendar('updateEvent', o.currentEvent);
+      $.publish(FORM_BUTTON_CLICKED, [o.currentEvent]);
+    });
+    
+    // update
+    $(fcmEvent).live('click', function(e) {
+      $(fcmEvent).removeClass('fcm-event-active');
+      $(this).addClass('fcm-event-active');
+      var event = $(this).data('event');
+      o.currentEvent = event;
+      $.publish(CURRENT_EVENT_CLICKED, [event]);
     });
     
     // cancel
     $(cancelActionId).live('click', function(e) {
-      $(addActionId).show();
-      $(updateActionId).hide();
-      clearForm();
+      $.publish(CANCEL_LINK_CLICKED, o.currentEvent);
       e.preventDefault();
     });
   }
-
-  var addEvent = function(event) {
-    $('#' + o.calendar).fullCalendar('renderEvent', event, true);
-    highlightDay(o.currentDay);
-    clearForm();
-  };
-
-  var updateEvent = function(event) {
-    // remove chosen event
-    o.currentEvent.title = event.title;
-    $("#" + o.calendar).fullCalendar('updateEvent', o.currentEvent);
-    $day = eventToDay(o.currentEvent);
-    highlightDay($day);
-    clearForm();
-    $(addActionId).show();
-    $(updateActionId).hide();
+  
+  var updateCurrentDate = function(date) {
+    o.currentDate = date;
+    
+    var prettyDate = $.fullCalendar.formatDate(date, o.currentDateFormat);
+    $(currentDayId).html(prettyDate); 
   };
 
   var buildContent = function() {
     var content =
-      '<div class="fcm-current-day-wrapper"><p class="fcm-current-day" id="fcm-current-date">' + o.currentDate + '</p></div>' +
+      '<div class="fcm-current-day-wrapper"><p class="fcm-current-day" id="fcm-current-date"></p></div>' +
+      '<div class="fcm-events" id="fcm-events"></div>' +
       '<form class="fcm-form" id="fcm-add-event-form">' +
       '<label><strong class="fcm-title" id="fcm-labelId">' + o.newEventLabel + '</strong></label><br />' +
       '<input type="text" name="title" value="" /><br />' +
@@ -116,12 +184,40 @@
         '</form>';
 
     return content;
-  }
-
-  var clearForm = function() {
-    $(eventFormId + ' input[name="title"]').val("");
   };
-
+    
+  var loadCurrentDayEvents = function() {
+    var $that = $(this);
+    $that.html('');   
+    $.each(getEvents(), function(index, event){
+      if (datesEqual(event.start, o.currentDate)) {                
+        var $event = $('<div class="fcm-event">' + event.title + '</div>');
+        $event.appendTo($(currentEventsId));
+        $event.data('event', event);
+      }
+    });
+  };
+    
+  var showNewForm = function(e, event) {
+    var $event = $(this).find('input[name="title"]');
+    $event.val("");
+    $event.focus();
+    $(titleLabelId).html(o.newEventLabel);
+    $(addActionId).show();
+    $(updateActionId).hide();
+  };
+  
+  var showEditForm = function(e, event) {
+    $(titleLabelId).html(o.updateEventLabel);  
+    $(this).find('input[name="title"]').val(event.title);
+    $(addActionId).hide();
+    $(updateActionId).show();
+  };
+  
+  var getEvents = function() {
+    return $('#' + o.calendar).fullCalendar('clientEvents');
+  };
+  
   var highlightDay = function($day) {
     unhighlightDay();
     $day.css("background-color", o.activeDayBackgroundColor);
@@ -132,17 +228,15 @@
     if (o.currentDay != null) {
       o.currentDay.css("background-color", "#ffffff");
     }
-  }
-
-  // TODO fix it
+  };
+  
+  // TODO find some better way
   var eventToDay = function(event) {
     
     var eDay = $.fullCalendar.formatDate(event.start, "d");
     var eMonth = $.fullCalendar.formatDate(event.start, "MM");
-    
     var d = $("#" + o.calendar).fullCalendar('getDate');
     var tMonth = $.fullCalendar.formatDate(d, "MM");
-    
     var day = null;
     
     $('.fc-day-number').each(function(){
@@ -156,64 +250,31 @@
           }
         }
       }
-    })
+    });
+    
     return day;
   };
+
+  // helpers
   
-  var daysInMonth = function(month, year) {
-	  return new Date(year, month, 0).getDate();
+  var getMonth = function(date) {
+     return $.fullCalendar.formatDate(date, "MM");
   };
-
-  // public
-
-  $.fn.fcManager.dayClickCallback = function(date, $day) {
-    clearForm();
-    $(titleLabelId).html(o.newEventLabel);
-    $(addActionId).show();
-    $(updateActionId).hide();
-    $(currentDayId).html($.fullCalendar.formatDate(date, "MM/dd/yyyy"));
-    $(eventFormId + " input[name='title']").focus();
-    $day.css('background-color', '#FFFF88');
-    o.currentDate = date;
-
-    highlightDay($day);
-  };
-
-  $.fn.fcManager.eventClickCallback = function(event) {
-
-    o.currentEvent = event;
-    o.currentDate = event.start;
-    $(titleLabelId).html(o.updateEventLabel);
-    $(currentDayId).html($.fullCalendar.formatDate(event.start, "MM/dd/yyyy"));
-    $('#fcm-add-event-form input[name="title"]').val(event.title);
-   
-    $day = eventToDay(o.currentEvent);
-    highlightDay($day);
   
-    $(addActionId).hide();
-    $(updateActionId).show();
+  var getDay = function(date) {
+     return $.fullCalendar.formatDate(date, "d");
   };
-
-  // default options
-  var o = $.fn.fcManager.options = {
-    eventTypes: {'appointment': 'Appointment', 'personal': 'Personal'},
-
-    // labels
-    newEventLabel: 'Add New Event:',
-    updateEventLabel: 'Update Event:',
-    typeLabel: 'Event Type:',
-
-    calendar: 'calendar',
-    
-    // current
-    currentDay: null,
-    currentEvent: null,
-    currentDate: null,
-    activeDayBackgroundColor: '#F5F8F9'
+  
+  var datesEqual = function (date1, date2) {
+    if (getMonth(date1) === getMonth(date2) 
+      &&  getDay(date1) === getDay(date2)) {
+      return true;
+    }
+    return false;
   };
   
   // utils
-
+  
   $.fn.serializeObject = function() {
     var o = {};
     var a = this.serializeArray();
@@ -228,6 +289,31 @@
       }
     });
     return o;
+  };
+  
+  // pub/sub stuff
+  
+  var subs = [];
+  
+  $.subscribe = function(element, event, action){
+    if (subs[event] == undefined) {
+      subs[event] = [element];
+    }
+    else {
+      subs[event] = $.grep(subs[event], function(n){
+      	// is this good enough?
+        return n.selector != element.selector;
+      });  
+      subs[event].push(element);
+    }
+    element.unbind(event);
+    element.bind(event, action);
+  };
+  
+  $.publish = function(event, params) {
+    $.each(subs[event], function(i, v){
+      subs[event][i].trigger(event, params);
+    });
   };
 
 })(jQuery);

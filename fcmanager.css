@@ -1,11 +1,26 @@
 .fcm {
-	font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
+	font-family: "Lucida Grande", Helvetica,Arial, Verdana, sans-serif;
 	padding: 0px 0px 5px 0px;
 	border: 1px solid #A6C9E2;
-	/* background: #F5F8F9; */
 	width: 200px;
 	margin: 40px 0px 0px 10px;
 	float: left;
+}
+
+.fcm-events {
+	list-style-type: none;
+	padding: 5px 0px 0px 5px;
+	margin: 5px;
+}
+
+.fcm-event {
+	border-bottom: 1px solid #F5F8F9;
+	padding-top:2px;
+	cursor: pointer;
+}
+
+.fcm-event-active {
+	background-color: #F5F8F9;
 }
 
 .fcm-current-day-wrapper {
@@ -31,10 +46,6 @@
 		
 .fcm-form {
 	padding: 5px;
-}
-
-.fcm-form input {
-
 }
 
 .fcm-cancel {
