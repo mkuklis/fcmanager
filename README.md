@@ -20,7 +20,10 @@ The usage example:
     <!-- html -->
     <div id="calendar"></div>
 		<div id="manager"></div>
-		
+
+## Demo
+[Simple](http://michalkuklis.com/fcmanager/examples/index.html)
+
 ## Notes
 
 This is a very early version and it's not production ready. Some functionality is still missing but I plan to implement it in the near future.
