@@ -2,20 +2,15 @@
  * Manager for FullCalendar  v0.1
  * http://github.com/mkuklis/fcmanager
  *
- * Use fcmanager.css for basic styling.
  *
  * Copyright (c) 2010 Michal Kuklis
  * Dual licensed under the MIT and GPL licenses:
  *   http://www.opensource.org/licenses/mit-license.php
  *   http://www.gnu.org/licenses/gpl.htmlc
  *
- * Date: Thu Feb 25 2010
- *
+ * 03/02/2010
  */
 
-// TODO
-// * add simple pub/sub
-// * replace actions with events (bind/trigger or publish/subscribe)
 
 (function($) {
 
@@ -30,11 +25,11 @@
       var element = $(this).addClass('fcm');
       element.html(buildContent());
       
-      if (o.currentDate == undefined) {
+      if (currentDate == undefined) {
         updateCurrentDate($("#" + o.calendar).fullCalendar('getDate'));         
       }
+      
       bindEvents();
-      $.publish(PLUGIN_READY);
     });
   };
 
@@ -42,40 +37,33 @@
   
   $.fn.fcManager.dayClickCallback = function(date, $day) {
     updateCurrentDate(date);
-    o.currentDay = $day;
     highlightDay($day);
     $.publish(DAY_CLICKED);
   };
 
   $.fn.fcManager.eventClickCallback = function(event) {
-    o.currentEvent = event;
+    currentEvent = event;
     updateCurrentDate(event.start);
-    o.currentDay = eventToDay(event);
-    highlightDay(o.currentDay);
+    highlightDay(eventToDay(event));
     $.publish(EVENT_CLICKED, [event]);
   };
   
   // default options
   var o = $.fn.fcManager.options = {
-    
     // labels
-    eventTypes: {'appointment': 'Appointment', 'personal': 'Personal'},
+    // eventTypes: {'appointment': 'Appointment', 'personal': 'Personal'},
     newEventLabel: 'Add New Event:',
     updateEventLabel: 'Update Event:',
     typeLabel: 'Event Type:',
+    addButtonLabel: 'Add Event',
+    updateButtonLabel: 'Update Event',
     
     // calendar id
     calendar: 'calendar',
     
-    // current
-    currentDay: null,
-    currentEvent: null,
-    
-    // date associated with the current day or event 
-    currentDate: null,
+    // date associated with the current day or event
     currentDateFormat: "MM/dd/yyyy",
     activeDayBackgroundColor: '#F5F8F9'
-    
   };
 
   // private
@@ -88,6 +76,11 @@
     FORM_BUTTON_CLICKED = "formButtonClicked",
     CANCEL_LINK_CLICKED = "cancelClicked",
     PLUGIN_READY = "pluginReady",
+    
+    // properties
+    currentEvent = null,
+    currentDay = null,
+    currentDate = null,
     
     // ids
     eventFormId = '#fcm-add-event-form',
@@ -104,58 +97,81 @@
   var bindEvents = function() {
 
     $.subscribe($(currentEventsId), EVENT_CLICKED, loadCurrentDayEvents);
-    $.subscribe($(currentEventsId), PLUGIN_READY, loadCurrentDayEvents);
     $.subscribe($(currentEventsId), DAY_CLICKED, loadCurrentDayEvents);
     $.subscribe($(currentEventsId), FORM_BUTTON_CLICKED, loadCurrentDayEvents);
-    $.subscribe($(eventFormId), EVENT_CLICKED, showEditForm);
-    $.subscribe($(eventFormId), CURRENT_EVENT_CLICKED, showEditForm);
+    $.subscribe($(currentEventsId), PLUGIN_READY, loadCurrentDayEvents);
+ 
     $.subscribe($(eventFormId), DAY_CLICKED, showNewForm);
+    $.subscribe($(eventFormId), EVENT_CLICKED, showEditForm);
     $.subscribe($(eventFormId), FORM_BUTTON_CLICKED, showNewForm);
+    $.subscribe($(eventFormId), CURRENT_EVENT_CLICKED, showEditForm);
     $.subscribe($(eventFormId), CANCEL_LINK_CLICKED, showNewForm);
     
+    $.subscribe($(currentEventsId), CANCEL_LINK_CLICKED, unhighlightCurrentEvents);
+    $.subscribe($(currentEventsId), FORM_BUTTON_CLICKED, unhighlightCurrentEvents);
+    $.subscribe($(currentEventsId), DAY_CLICKED, unhighlightCurrentEvents);
+    
+    
+    // enter button
+    $(eventFormId + " input[name='title']").bind('keypress', function(e) {
+      var code = (e.keyCode ? e.keyCode : e.which);
+      if(code == 13) { //Enter keycode
+        if ($(addActionId).is(':visible')) {
+          $(eventFormId + " input[name='add']").trigger('click');
+        }
+        else {
+          $(eventFormId + " input[name='update']").trigger('click');
+        }
+        e.preventDefault();
+      }
+    });
+
     // add
     $(eventFormId + " input[name='add']").live('click', function(e) {
       var event = $(eventFormId).serializeObject();
       if (event.title != "") {
-        // todo process date
-        if (o.currentDate == null) {
+        // TO DO process date
+        if (currentDate == null) {
           // FIX ME
-          o.currentDate = $.fullCalendar.parseDate($(currentDayId).html());
+          currentDate = $.fullCalendar.parseDate($(currentDayId).html());
         }
 
-        event.start = o.currentDate;
+        event.start = currentDate;
         $('#' + o.calendar).fullCalendar('renderEvent', event, true);
-        $.publish(FORM_BUTTON_CLICKED, [o.currentEvent]);
+        $.publish(FORM_BUTTON_CLICKED, [currentEvent]);
       }
     });
     
     // edit
     $(eventFormId + " input[name='update']").live('click', function(e) {
       var event = $(eventFormId).serializeObject();
-      o.currentEvent.title = event.title;
-      $("#" + o.calendar).fullCalendar('updateEvent', o.currentEvent);
-      $.publish(FORM_BUTTON_CLICKED, [o.currentEvent]);
+      currentEvent.title = event.title;
+      $("#" + o.calendar).fullCalendar('updateEvent', currentEvent);
+      $.publish(FORM_BUTTON_CLICKED, [currentEvent]);
     });
     
-    // update
-    $(fcmEvent).live('click', function(e) {
-      $(fcmEvent).removeClass('fcm-event-active');
-      $(this).addClass('fcm-event-active');
+    // edit current event
+    $(fcmEvent).live('click', function(e) { 
+      $(fcmEvent).removeClass('active');
+      $(this).addClass('active');
       var event = $(this).data('event');
-      o.currentEvent = event;
+      currentEvent = event;
       $.publish(CURRENT_EVENT_CLICKED, [event]);
     });
     
     // cancel
     $(cancelActionId).live('click', function(e) {
-      $.publish(CANCEL_LINK_CLICKED, o.currentEvent);
+      $.publish(CANCEL_LINK_CLICKED, currentEvent);
       e.preventDefault();
     });
+    
+    $(eventFormId + " input[name='title']").focus();
+    $.publish(PLUGIN_READY);
+    
   }
   
   var updateCurrentDate = function(date) {
-    o.currentDate = date;
-    
+    currentDate = date;
     var prettyDate = $.fullCalendar.formatDate(date, o.currentDateFormat);
     $(currentDayId).html(prettyDate); 
   };
@@ -167,31 +183,24 @@
       '<form class="fcm-form" id="fcm-add-event-form">' +
       '<label><strong class="fcm-title" id="fcm-labelId">' + o.newEventLabel + '</strong></label><br />' +
       '<input type="text" name="title" value="" /><br />' +
-      '<label><strong class="fcm-title">' + o.typeLabel + '</strong></label><br />' +
-      '<select name="type">';
-
-      for (var type in o.eventTypes) {
-        content += '<option value="' + type + '">' + o.eventTypes[type] + '</option>';
-      }
-
-      content += '</select>' +
-        '<hr class="fcm-hrcolor" />' +
-        '<div class="fcm-action" id="fcm-add-action">' +
-        '<input type="button" name="add" value="add Event" /></div>' +
-        '<div class="fcm-action" id="fcm-update-action" style="display:none">' +
-        '<input type="button" name="update" value="update Event" />' +
-        '<a class="fcm-cancel" id="fcm-cancel-action" href="">cancel</a></div>' +
-        '</form>';
-
+      '<hr class="fcm-hrcolor" />' +
+      '<div class="fcm-action" id="fcm-add-action">' +
+      '<input type="button" name="add" value="' + o.addButtonLabel + '" /></div>' +
+      '<div class="fcm-action" id="fcm-update-action" style="display:none">' +
+      '<input type="button" name="update" value="' + o.updateButtonLabel + '" />' +
+      '<a class="fcm-cancel" id="fcm-cancel-action" href="">cancel</a></div>' +
+      '</form>';
     return content;
   };
     
   var loadCurrentDayEvents = function() {
     var $that = $(this);
-    $that.html('');   
+    $that.html('');
+    
     $.each(getEvents(), function(index, event){
-      if (datesEqual(event.start, o.currentDate)) {                
-        var $event = $('<div class="fcm-event">' + event.title + '</div>');
+      if (datesEqual(event.start, currentDate)) {
+        var clazz = (event == currentEvent) ? ' active' : '';
+        var $event = $('<div class="fcm-event' + clazz + '">' + event.title + '</div>');
         $event.appendTo($(currentEventsId));
         $event.data('event', event);
       }
@@ -221,13 +230,17 @@
   var highlightDay = function($day) {
     unhighlightDay();
     $day.css("background-color", o.activeDayBackgroundColor);
-    o.currentDay = $day;
+    currentDay = $day;
   };
   
   var unhighlightDay = function() {
-    if (o.currentDay != null) {
-      o.currentDay.css("background-color", "#ffffff");
+    if (currentDay != null) {
+      currentDay.css("background-color", "#ffffff");
     }
+  };
+  
+  var unhighlightCurrentEvents = function(e) {
+    $(fcmEvent).removeClass('active');
   };
   
   // TODO find some better way
@@ -303,10 +316,10 @@
       subs[event] = $.grep(subs[event], function(n){
       	// is this good enough?
         return n.selector != element.selector;
-      });  
+      });
       subs[event].push(element);
     }
-    element.unbind(event);
+    // element.unbind(event);
     element.bind(event, action);
   };
   
