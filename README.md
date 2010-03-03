@@ -22,7 +22,7 @@ The usage example:
 		<div id="manager"></div>
 
 ## Demo
-[Simple](http://michalkuklis.com/fcmanager/examples/index.html)
+[Simple](http://michalkuklis.com/fcmanager/examples/index.html) - simple demo
 
 ## Notes
 
